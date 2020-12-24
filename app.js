@@ -2,13 +2,16 @@
  * @Description: 项目主程序
  * @Author: sufen
  * @Date: 2020-12-24 14:35:29
- * @LastEditTime: 2020-12-24 16:50:44
+ * @LastEditTime: 2020-12-24 17:17:47
  * @LastEditors: sufen
  */
 const request = require('request')
 const iconv = require('iconv-lite')
 const cheerio = require('cheerio')
 const async = require('async')
+const fs = require('fs')
+
+const fetchBrandData = [] // 存放爬取数据
 
 /**
  * 爬取品牌 & 车系
@@ -56,10 +59,12 @@ function fetchBrand() {
           // 品牌分类下的车系，如 3 系、5 系、7 系
           const series = curBrandSeries.eq(j).find('h4 a')
           for (let k = 0; k < series.length; k++) {
-            groupObj.series.push({ name: series.eq(k).text() })
+            groupObj.series.push({ name: series.eq(k).text(), models: [] })
           }
           brandObj.group.push(groupObj)
         }
+
+        fetchBrandData.push(brandObj)
 
         console.log(brandObj)
       }
@@ -83,6 +88,10 @@ function fetchBrand() {
       console.log('----------------------------')
       console.log('车辆品牌抓取完毕！共有数据：' + countBrand)
       console.log('----------------------------')
+
+      // 生成本地 json 文件
+      const data = JSON.stringify(fetchBrandData)
+      fs.writeFileSync('data.json', data)
     }
   )
 }
