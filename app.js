@@ -2,7 +2,7 @@
  * @Description: 项目主程序
  * @Author: sufen
  * @Date: 2020-12-24 14:35:29
- * @LastEditTime: 2020-12-24 16:42:13
+ * @LastEditTime: 2020-12-24 16:50:44
  * @LastEditors: sufen
  */
 const request = require('request')
@@ -38,13 +38,30 @@ function fetchBrand() {
       const curBrandsLen = curBrands.length
       for (let i = 0; i < curBrandsLen; i++) {
         countBrand++
-        const obj = {
+        const brandObj = {
           name: curBrands.eq(i).find('dt div a').text(),
           logo: `https:${curBrands.eq(i).find('dt a img').attr('src')}`,
           group: []
         }
 
-        console.log(obj)
+        // 车辆品牌分类，如华晨宝马、进口宝马
+        const curBrandGroup = curBrands.eq(i).find('dd div.h3-tit')
+        const curBrandSeries = curBrands.eq(i).find('dd ul.rank-list-ul')
+        for (let j = 0; j < curBrandGroup.length; j++) {
+          const groupObj = {
+            name: curBrandGroup.eq(j).text(),
+            series: []
+          }
+
+          // 品牌分类下的车系，如 3 系、5 系、7 系
+          const series = curBrandSeries.eq(j).find('h4 a')
+          for (let k = 0; k < series.length; k++) {
+            groupObj.series.push({ name: series.eq(k).text() })
+          }
+          brandObj.group.push(groupObj)
+        }
+
+        console.log(brandObj)
       }
       countSuccess++
       const time = Date.now() - startTime
