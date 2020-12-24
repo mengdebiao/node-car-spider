@@ -2,7 +2,7 @@
  * @Description: 项目主程序
  * @Author: sufen
  * @Date: 2020-12-24 14:35:29
- * @LastEditTime: 2020-12-24 17:17:47
+ * @LastEditTime: 2020-12-24 18:11:22
  * @LastEditors: sufen
  */
 const request = require('request')
@@ -42,6 +42,7 @@ function fetchBrand() {
       for (let i = 0; i < curBrandsLen; i++) {
         countBrand++
         const brandObj = {
+          id: parseInt(curBrands.eq(i).attr('id'), 10),
           name: curBrands.eq(i).find('dt div a').text(),
           logo: `https:${curBrands.eq(i).find('dt a img').attr('src')}`,
           group: []
@@ -51,22 +52,35 @@ function fetchBrand() {
         const curBrandGroup = curBrands.eq(i).find('dd div.h3-tit')
         const curBrandSeries = curBrands.eq(i).find('dd ul.rank-list-ul')
         for (let j = 0; j < curBrandGroup.length; j++) {
+          // 通过分类链接截取后得到分类 id
+          const groupUrl = curBrandGroup.eq(j).find('a').attr('href')
+          const groupId = parseInt(groupUrl.split('.html')[0].split('-').pop())
+          // 分类对象
           const groupObj = {
+            id: groupId,
             name: curBrandGroup.eq(j).text(),
             series: []
           }
 
           // 品牌分类下的车系，如 3 系、5 系、7 系
-          const series = curBrandSeries.eq(j).find('h4 a')
+          const series = curBrandSeries.eq(j).find('li').not('.dashline')
           for (let k = 0; k < series.length; k++) {
-            groupObj.series.push({ name: series.eq(k).text(), models: [] })
+            // 通过车系链接截取后得到车系 id
+            const seriesUrl = series.eq(k).find('h4 a').attr('href')
+            const seriesId = parseInt(seriesUrl.split('/#levelsource')[0].split('/').pop())
+            // 车系对象
+            const seriesObj = {
+              id: seriesId,
+              name: series.eq(k).find('h4 a').text(),
+              models: []
+            }
+            groupObj.series.push(seriesObj)
           }
+
           brandObj.group.push(groupObj)
         }
 
         fetchBrandData.push(brandObj)
-
-        console.log(brandObj)
       }
       countSuccess++
       const time = Date.now() - startTime
