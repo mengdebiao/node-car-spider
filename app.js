@@ -2,13 +2,16 @@
  * @Description: 项目主程序
  * @Author: sufen
  * @Date: 2020-12-24 14:35:29
- * @LastEditTime: 2020-12-25 17:12:32
+ * @LastEditTime: 2020-12-28 23:15:17
  * @LastEditors: sufen
  */
 const request = require('request')
 const iconv = require('iconv-lite')
 const async = require('async')
 const fs = require('fs')
+const path = require('path')
+const JSONStream = require('JSONStream')
+const SaveToMongo = require('save-to-mongo') // 用于将爬取的数据存储到MongoDB数据库
 
 let fetchBrandData = [] // 存放爬取数据
 
@@ -34,14 +37,21 @@ function sleep(time) {
 function brandSort(list) {
   let newList = []
   const obj = list.reduce((last, item) => {
-    item.firstletter = item.bfirstletter
+    // 指定顺序存储
+    item.id = item.id
+    item.name = item.name
+    item.logo = item.logo
+    item.country = item.country
+    item.countryId = item.countryid
+    item.firstLetter = item.bfirstletter
     delete item.bfirstletter
-    if (last[item.firstletter]) {
-      last[item.firstletter].push(item)
+    delete item.countryid
+    if (last[item.firstLetter]) {
+      last[item.firstLetter].push(item)
     } else {
-      last[item.firstletter] = [item]
+      last[item.firstLetter] = [item]
     }
-    last[item.firstletter].sort((a, b) => a.id - b.id)
+    last[item.firstLetter].sort((a, b) => a.id - b.id)
     return last
   }, {})
   for (const key in obj) {
@@ -75,7 +85,13 @@ function fetchBrand() {
       console.log('车辆品牌抓取完毕！共有数据：' + branditems.length + ', 耗时 ' + time + 'ms')
       console.log('----------------------------')
 
-      fetchFactory()
+      // 生成本地 json 文件
+      const data = JSON.stringify(fetchBrandData)
+      fs.writeFileSync('data.json', data)
+
+      saveMongo()
+
+      // fetchFactory()
     })
   }
   reptileBrand()
@@ -189,6 +205,35 @@ function fetchYearModel() {
       fs.writeFileSync('data.json', data)
     }
   )
+}
+
+/**
+ * 将数据存储进入数据库
+ *
+ */
+function saveMongo() {
+  const saveToMongo = SaveToMongo({
+    uri: 'mongodb://127.0.0.1:27017/car_db', // mongoDB的地址
+    collection: 'brands',
+    bulk: {
+      mode: 'unordered'
+    }
+  })
+
+  let t = JSON.stringify(fetchBrandData)
+  fs.writeFileSync('data.json', t)
+
+  // 将data.json存入MongoDB中
+  fs.createReadStream(path.join(__dirname, './data.json'))
+    .pipe(JSONStream.parse('*'))
+    .pipe(saveToMongo)
+    .on('execute-error', function (err) {
+      console.log(err)
+    })
+    .on('done', function () {
+      console.log('存入数据库完毕!')
+      process.exit(0)
+    })
 }
 
 fetchBrand()
