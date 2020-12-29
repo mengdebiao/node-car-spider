@@ -118,6 +118,9 @@ function fetchFactory() {
       const {
         result: { factoryitems = [] }
       } = JSON.parse(iconv.decode(body, 'gb2312'))
+      factoryitems.forEach((item) => {
+        item.brandId = branditems.id
+      })
       branditems.factoryitems = factoryitems
 
       countSuccess += factoryitems.length
@@ -177,6 +180,12 @@ function fetchYearModel() {
       const {
         result: { yearitems = [] }
       } = JSON.parse(iconv.decode(body, 'gb2312'))
+      yearitems.forEach((item) => {
+        item.seriesId = seriesitems.id
+        item.specitems.forEach((e) => {
+          e.yearId = item.id
+        })
+      })
       seriesitems.yearitems = yearitems
 
       countSuccess++
@@ -237,3 +246,5 @@ function saveMongo() {
 }
 
 fetchBrand()
+
+// 2020-12-25 车系数量：2419
